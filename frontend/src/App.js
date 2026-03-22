@@ -7,7 +7,14 @@ function App() {
   return (
     <Router>
       {/* Add Toaster here so it works everywhere */}
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3200,
+          className: '!bg-slate-900 !text-slate-100 !border !border-white/10 !shadow-xl',
+          style: { fontSize: '14px' },
+        }}
+      />
       
       <Routes>
         <Route path="/" element={<VidyaDashboard />} />

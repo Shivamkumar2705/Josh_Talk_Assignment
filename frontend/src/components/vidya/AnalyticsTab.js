@@ -1,150 +1,185 @@
-import React from 'react';
-import { BarChart3, MessageSquareQuote, TrendingUp, Users } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { BarChart3, MessageSquareQuote, TrendingUp, Users, Filter } from 'lucide-react';
 import LeaderboardTab from './LeaderboardTab';
 
-export default function AnalyticsTab() {
-  const chartData = [
-    { name: 'Model A (Copilot)', score: 4.8, color: 'bg-indigo-500' },
-    { name: 'Model B (Gemini 3.1)', score: 4.5, color: 'bg-emerald-500' },
-    { name: 'Model C (Firefly/Gemini 2.5)', score: 4.2, color: 'bg-amber-500' },
-  ];
+const FILTERS = [
+  { id: 'all', label: 'All quotes' },
+  { id: 'Model A', label: 'Model A' },
+  { id: 'Model B', label: 'Model B' },
+  { id: 'Model C', label: 'Model C' },
+];
 
-  const insights = [
+const CHART_DATA = [
+  { name: 'Model A (Copilot)', score: 4.8, color: 'from-indigo-500 to-violet-500' },
+  { name: 'Model B (Gemini 3.1)', score: 4.5, color: 'from-emerald-500 to-teal-500' },
+  { name: 'Model C (Firefly/Gemini 2.5)', score: 4.2, color: 'from-amber-500 to-orange-500' },
+];
+
+const INSIGHTS = [
     {
       id: 'Rahul',
       role: 'CS Senior',
-      quote: "Firefly actually generated the correct Newtonian physics formula on the board. Huge plus.",
+      quote: 'Firefly actually generated the correct Newtonian physics formula on the board. Huge plus.',
       rating: 5,
-      model: 'Model C'
+      model: 'Model C',
     },
     {
       id: 'Sneha',
       role: 'IT/UX',
-      quote: "Gemini 3.1 has the cleanest layout. It looks ready to drop straight into an EdTech app.",
+      quote: 'Gemini 3.1 has the cleanest layout. It looks ready to drop straight into an EdTech app.',
       rating: 5,
-      model: 'Model B'
+      model: 'Model B',
     },
     {
       id: 'Amit',
       role: 'Mechanical',
-      quote: "Copilot nailed the texture of the wooden desks and the physical chalkboard.",
+      quote: 'Copilot nailed the texture of the wooden desks and the physical chalkboard.',
       rating: 5,
-      model: 'Model A'
+      model: 'Model A',
     },
     {
       id: 'Anjali',
       role: 'CS',
-      quote: "Gemini 3.1 generated the cleanest English text on the board without typical AI hallucinations.",
+      quote: 'Gemini 3.1 generated the cleanest English text on the board without typical AI hallucinations.',
       rating: 5,
-      model: 'Model B'
-    }
-  ];
+      model: 'Model B',
+    },
+];
+
+export default function AnalyticsTab() {
+  const [quoteFilter, setQuoteFilter] = useState('all');
+
+  const filteredInsights = useMemo(() => {
+    if (quoteFilter === 'all') return INSIGHTS;
+    return INSIGHTS.filter((i) => i.model === quoteFilter);
+  }, [quoteFilter]);
 
   return (
     <div className="space-y-12 animate-pop-in">
       <LeaderboardTab />
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex items-center gap-4 hover:bg-slate-800/60 transition-colors">
-          <div className="p-4 bg-blue-500/10 text-blue-400 rounded-xl">
-            <Users size={24} />
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {[
+          { icon: Users, label: 'Total participants', value: '8', sub: 'Engineering cohort', accent: 'text-cyan-400', bg: 'from-cyan-500/15 to-cyan-500/5' },
+          { icon: TrendingUp, label: 'Avg. completion', value: '4m 12s', sub: 'Per evaluation', accent: 'text-violet-400', bg: 'from-violet-500/15 to-violet-500/5' },
+          { icon: BarChart3, label: 'Evaluations logged', value: '24', sub: '3 models × 8 runs', accent: 'text-emerald-400', bg: 'from-emerald-500/15 to-emerald-500/5' },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 transition hover:border-white/15"
+          >
+            <div className={`pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br ${card.bg} blur-2xl`} />
+            <div className="relative flex items-start gap-4">
+              <div className={`rounded-xl bg-white/[0.06] p-3 ${card.accent}`}>
+                <card.icon size={24} strokeWidth={1.75} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">{card.label}</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-white">{card.value}</p>
+                <p className="mt-1 text-xs text-slate-600">{card.sub}</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Total Participants</p>
-            <p className="text-2xl font-bold text-slate-100">8</p>
-          </div>
-        </div>
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex items-center gap-4 hover:bg-slate-800/60 transition-colors">
-          <div className="p-4 bg-purple-500/10 text-purple-400 rounded-xl">
-            <TrendingUp size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Avg Completion Time</p>
-            <p className="text-2xl font-bold text-slate-100">4m 12s</p>
-          </div>
-        </div>
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 shadow-lg flex items-center gap-4 hover:bg-slate-800/60 transition-colors">
-          <div className="p-4 bg-emerald-500/10 text-emerald-400 rounded-xl">
-            <BarChart3 size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">Total Evaluations</p>
-            <p className="text-2xl font-bold text-slate-100">24</p>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Bar Charts Section */}
-        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-          
-          <h2 className="text-xl font-semibold mb-8 flex items-center gap-2 text-slate-100 relative z-10">
-            <div className="p-1.5 bg-indigo-500/10 rounded-lg">
-              <BarChart3 size={20} className="text-indigo-400" />
-            </div>
-            Average Sentiment Scores
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c1222]/60 p-6 sm:p-8 shadow-xl">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl" />
+          <h2 className="relative z-10 mb-8 flex items-center gap-2 text-xl font-semibold text-white">
+            <span className="rounded-xl bg-indigo-500/15 p-2 text-indigo-300">
+              <BarChart3 size={22} />
+            </span>
+            Average sentiment scores
           </h2>
-          
-          <div className="space-y-8 flex-1 flex flex-col justify-center relative z-10">
-            {chartData.map((data, index) => (
-              <div key={index} className="space-y-2 group">
-                <div className="flex justify-between items-end">
-                  <span className="text-sm font-medium text-slate-300 group-hover:text-slate-200 transition-colors">{data.name}</span>
-                  <span className="text-sm font-bold text-slate-100">{data.score} <span className="text-slate-500 font-normal">/ 5</span></span>
+          <div className="relative z-10 space-y-6">
+            {CHART_DATA.map((data) => (
+              <div key={data.name} className="space-y-2">
+                <div className="flex items-end justify-between">
+                  <span className="text-sm font-medium text-slate-300">{data.name}</span>
+                  <span className="font-mono text-sm font-bold text-white">
+                    {data.score} <span className="font-normal text-slate-500">/ 5</span>
+                  </span>
                 </div>
-                <div className="w-full bg-slate-900/80 rounded-full h-3.5 shadow-inner overflow-hidden border border-slate-800">
-                  <div 
-                    className={`${data.color} h-full rounded-full relative overflow-hidden transition-all duration-1000 ease-out`}
+                <div className="h-3 overflow-hidden rounded-full bg-slate-800/90 ring-1 ring-white/5">
+                  <div
+                    className={`h-full rounded-full bg-gradient-to-r ${data.color} shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition-[width] duration-700 ease-out`}
                     style={{ width: `${(data.score / 5) * 100}%` }}
-                  >
-                    <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
-                  </div>
+                  />
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Qualitative Insights Section */}
-        <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none"></div>
-          
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-slate-100 relative z-10">
-            <div className="p-1.5 bg-emerald-500/10 rounded-lg">
-              <MessageSquareQuote size={20} className="text-emerald-400" />
+        <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c1222]/60 p-6 sm:p-8 shadow-xl">
+          <div className="pointer-events-none absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="relative z-10 mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
+              <span className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
+                <MessageSquareQuote size={22} />
+              </span>
+              Qualitative insights
+            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                <Filter size={12} />
+                Filter
+              </span>
+              {FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setQuoteFilter(f.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    quoteFilter === f.id
+                      ? 'bg-gradient-to-r from-cyan-600 to-violet-600 text-white shadow-lg shadow-cyan-500/20'
+                      : 'border border-white/10 bg-white/[0.04] text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
-            Qualitative Insights
-          </h2>
-          
-          <div className="space-y-4 relative z-10 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {insights.map((insight, index) => (
-              <div key={index} className="bg-slate-900/60 border border-slate-700/50 rounded-xl p-4 hover:border-slate-600 transition-colors relative group">
-                <MessageSquareQuote size={24} className="text-slate-700 absolute top-4 right-4 group-hover:text-emerald-500/20 transition-colors" />
-                <div className="flex items-start gap-4">
-                  <div className="flex-1">
-                    <p className="text-slate-200 text-sm leading-relaxed mb-3 italic">"{insight.quote}"</p>
-                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/80">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold text-slate-300">{insight.id}</span>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">{insight.role}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full">{insight.model}</span>
-                        <div className="flex text-amber-400">
-                          {[...Array(insight.rating)].map((_, i) => (
-                            <svg key={i} className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
+          </div>
+
+          <div className="relative z-10 max-h-[420px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+            {filteredInsights.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-500">No quotes for this filter.</p>
+            ) : (
+              filteredInsights.map((insight, index) => (
+                <div
+                  key={`${insight.id}-${index}`}
+                  className="group rounded-2xl border border-white/[0.06] bg-[#070b14]/80 p-4 transition hover:border-emerald-500/25"
+                >
+                  <MessageSquareQuote
+                    size={22}
+                    className="float-right text-slate-800 transition group-hover:text-emerald-500/30"
+                  />
+                  <p className="text-sm italic leading-relaxed text-slate-200">"{insight.quote}"</p>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
+                    <div>
+                      <span className="text-sm font-bold text-slate-100">{insight.id}</span>
+                      <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        {insight.role}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] font-medium text-slate-400">
+                        {insight.model}
+                      </span>
+                      <div className="flex text-amber-400">
+                        {[...Array(insight.rating)].map((_, i) => (
+                          <svg key={i} className="h-3.5 w-3.5 fill-current" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

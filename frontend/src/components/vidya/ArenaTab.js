@@ -1,50 +1,80 @@
-import React, { useState } from 'react';
-import { User, Mail, Calendar, CheckSquare, Sparkles, X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import CopilotImg from '../../Assets/Copilot.png';
-import Gemini31Img from '../../Assets/Gemini3_1flash.png';
-import FireflyImg from '../../Assets/Firefly_GeminiFlash2_5.png';
-import CopilotScreenshot from '../../Assets/copilotscreenshot.png';
-import Gemini31Screenshot from '../../Assets/gemini3_1screenshot.png';
-import Gemini25Screenshot from '../../Assets/gemini2_5screenshot.png';
-import { FileText, Cpu, Globe, Settings, Image as ImageIcon } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import {
+  User,
+  Mail,
+  Calendar,
+  CheckSquare,
+  Sparkles,
+  X,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  FileText,
+  Cpu,
+  Globe,
+  Settings,
+  Image as ImageIcon,
+  RotateCcw,
+  TrendingUp,
+} from 'lucide-react';
+import {
+  CopilotImg,
+  Gemini31Img,
+  FireflyImg,
+  CopilotScreenshot,
+  Gemini31Screenshot,
+  Gemini25Screenshot,
+} from '../../Assets/modelPlaceholders';
 
-const commonPrompt = "A realistic, high-quality illustration for a 9th-grade science textbook. A female Indian teacher wearing a modest, simple cotton saree is standing in front of a green chalkboard, explaining the concept of gravity by dropping a cricket ball. The classroom is a typical Indian school setting with wooden benches. The students are diverse Indian children wearing standard school uniforms (light blue shirts and dark blue skirts/trousers), paying close attention. Natural daylight coming from a window.";
+const commonPrompt =
+  'A realistic, high-quality illustration for a 9th-grade science textbook. A female Indian teacher wearing a modest, simple cotton saree is standing in front of a green chalkboard, explaining the concept of gravity by dropping a cricket ball. The classroom is a typical Indian school setting with wooden benches. The students are diverse Indian children wearing standard school uniforms (light blue shirts and dark blue skirts/trousers), paying close attention. Natural daylight coming from a window.';
 
 const models = [
-  { 
-    id: 'A', 
-    name: 'Model A', 
+  {
+    id: 'A',
+    name: 'Model A',
     image: CopilotImg,
     company: 'OpenAI',
     modelName: 'DALL-E 3 (via Microsoft Copilot)',
     prompt: commonPrompt,
     generatedAt: 'copilot.microsoft.com',
     settings: 'Default "Creative" mode.',
-    proof: CopilotScreenshot
+    proof: CopilotScreenshot,
+    accent: 'from-blue-600/20 to-cyan-500/10',
+    ring: 'ring-cyan-500/30',
   },
-  { 
-    id: 'B', 
-    name: 'Model B', 
+  {
+    id: 'B',
+    name: 'Model B',
     image: Gemini31Img,
     company: 'Google',
     modelName: 'Gemini 3.1 Flash Image (Nano Banana 2)',
     prompt: commonPrompt,
     generatedAt: 'gemini.google.com (Gemini Web App)',
     settings: 'Generated via the Pro/Paid interface for higher-fidelity output.',
-    proof: Gemini31Screenshot
+    proof: Gemini31Screenshot,
+    accent: 'from-emerald-600/20 to-teal-500/10',
+    ring: 'ring-emerald-500/30',
   },
-  { 
-    id: 'C', 
-    name: 'Model C', 
+  {
+    id: 'C',
+    name: 'Model C',
     image: FireflyImg,
     company: 'Google (via Adobe Partner)',
     modelName: 'Gemini 2.5 Flash (w/ Nano Banana)',
     prompt: commonPrompt,
     generatedAt: 'firefly.adobe.com (Partner Models Section)',
     settings: 'Aspect Ratio: Classic (5:4); Content Type: Art.',
-    proof: Gemini25Screenshot
+    proof: Gemini25Screenshot,
+    accent: 'from-orange-600/20 to-amber-500/10',
+    ring: 'ring-orange-500/30',
   },
 ];
+
+function avgScore(r) {
+  return ((r.culture + r.visual + r.education) / 3).toFixed(2);
+}
 
 export default function ArenaTab() {
   const [ratings, setRatings] = useState({
@@ -52,230 +82,392 @@ export default function ArenaTab() {
     B: { culture: 3, visual: 3, education: 3 },
     C: { culture: 3, visual: 3, education: 3 },
   });
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [consent, setConsent] = useState(false);
+  const [participant, setParticipant] = useState({ name: '', email: '', age: '' });
 
   const handleRatingChange = (modelId, metric, value) => {
-    setRatings(prev => ({
+    setRatings((prev) => ({
       ...prev,
-      [modelId]: { ...prev[modelId], [metric]: value }
+      [modelId]: { ...prev[modelId], [metric]: value },
     }));
   };
 
+  const resetRatings = () => {
+    setRatings({
+      A: { culture: 3, visual: 3, education: 3 },
+      B: { culture: 3, visual: 3, education: 3 },
+      C: { culture: 3, visual: 3, education: 3 },
+    });
+    toast.success('Sliders reset to midpoint.');
+  };
+
+  const leaderboardPreview = useMemo(() => {
+    return models
+      .map((m) => ({
+        id: m.id,
+        name: m.name,
+        score: parseFloat(avgScore(ratings[m.id])),
+      }))
+      .sort((a, b) => b.score - a.score);
+  }, [ratings]);
+
+  const handleSubmit = () => {
+    if (!consent) {
+      toast.error('Please confirm consent before submitting.');
+      return;
+    }
+    if (!participant.name.trim() || !participant.email.trim()) {
+      toast.error('Add your name and email so we can attribute feedback.');
+      return;
+    }
+    try {
+      const payload = { participant, ratings, at: new Date().toISOString() };
+      localStorage.setItem('vidya_last_eval', JSON.stringify(payload));
+    } catch {
+      /* ignore quota */
+    }
+    toast.success('Evaluation saved locally. Thank you for the detailed review!');
+  };
+
   return (
-    <div className="space-y-8 animate-pop-in">
-      {/* Onboarding Form */}
-      <div className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-slate-100">
-          <div className="p-1.5 bg-blue-500/10 rounded-lg">
-            <User size={20} className="text-blue-400" />
+    <div className="space-y-10 animate-pop-in">
+      {/* Onboarding */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 sm:p-8 shadow-2xl shadow-black/40">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-violet-600/10 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-3 text-xl font-semibold text-white">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-violet-600/20 border border-white/10">
+                <User size={20} className="text-cyan-300" />
+              </span>
+              Participant onboarding
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-400">
+              Tell us who is scoring — we use this only for cohort analytics and hiring evaluation, per your consent below.
+            </p>
           </div>
-          Participant Onboarding
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-300/90">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+            Session active
+          </span>
+        </div>
+
+        <div className="relative z-10 mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400 ml-1">Full Name</label>
-            <div className="relative group">
-              <input type="text" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-slate-600" placeholder="e.g. Rahul Sharma" />
-              <User size={18} className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+            <label className="ml-1 text-sm font-medium text-slate-400">Full name</label>
+            <div className="group relative">
+              <input
+                type="text"
+                value={participant.name}
+                onChange={(e) => setParticipant((p) => ({ ...p, name: e.target.value }))}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0c1222] py-3 pl-11 pr-4 text-slate-200 placeholder:text-slate-600 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
+                placeholder="e.g. Rahul Sharma"
+              />
+              <User size={18} className="absolute left-4 top-3.5 text-slate-500 transition group-focus-within:text-cyan-400" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400 ml-1">Email Address</label>
-            <div className="relative group">
-              <input type="email" className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all placeholder:text-slate-600" placeholder="rahul@example.com" />
-              <Mail size={18} className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+            <label className="ml-1 text-sm font-medium text-slate-400">Email</label>
+            <div className="group relative">
+              <input
+                type="email"
+                value={participant.email}
+                onChange={(e) => setParticipant((p) => ({ ...p, email: e.target.value }))}
+                className="w-full rounded-xl border border-white/[0.08] bg-[#0c1222] py-3 pl-11 pr-4 text-slate-200 placeholder:text-slate-600 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
+                placeholder="rahul@example.com"
+              />
+              <Mail size={18} className="absolute left-4 top-3.5 text-slate-500 transition group-focus-within:text-cyan-400" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-400 ml-1">Age Group</label>
-            <div className="relative group">
-              <select className="w-full bg-slate-900/80 border border-slate-700 rounded-xl py-3 pl-11 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all appearance-none cursor-pointer">
-                <option value="" className="bg-slate-900 text-slate-400">Select Age</option>
-                <option value="18+" className="bg-slate-900 text-slate-200">18+ Years</option>
+            <label className="ml-1 text-sm font-medium text-slate-400">Age group</label>
+            <div className="group relative">
+              <select
+                value={participant.age}
+                onChange={(e) => setParticipant((p) => ({ ...p, age: e.target.value }))}
+                className="w-full cursor-pointer appearance-none rounded-xl border border-white/[0.08] bg-[#0c1222] py-3 pl-11 pr-4 text-slate-200 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
+              >
+                <option value="">Select</option>
+                <option value="18+">18+ years</option>
+                <option value="under18">Under 18</option>
               </select>
-              <Calendar size={18} className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+              <Calendar size={18} className="pointer-events-none absolute left-4 top-3.5 text-slate-500 transition group-focus-within:text-cyan-400" />
             </div>
           </div>
         </div>
-        <div className="mt-6 flex items-start gap-3 relative z-10 bg-slate-900/30 p-4 rounded-xl border border-slate-800/50">
-          <div className="relative flex items-center justify-center mt-0.5">
-            <input type="checkbox" id="consent" className="peer w-5 h-5 appearance-none border-2 border-slate-600 rounded-md checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer" />
-            <CheckSquare size={14} className="absolute text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" />
+
+        <label className="relative z-10 mt-6 flex cursor-pointer items-start gap-3 rounded-xl border border-white/[0.06] bg-[#0c1222]/60 p-4 transition hover:border-white/10">
+          <div className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-600 transition checked:border-cyan-500 checked:bg-cyan-600"
+            />
+            <CheckSquare
+              size={14}
+              className="pointer-events-none absolute text-white opacity-0 transition peer-checked:opacity-100"
+            />
           </div>
-          <label htmlFor="consent" className="text-sm text-slate-300 cursor-pointer select-none leading-relaxed">
-            I consent to my data being used for hiring evaluation purposes.
-          </label>
+          <span className="text-sm leading-relaxed text-slate-300">
+            I consent to my feedback being used for hiring evaluation and internal product research.
+          </span>
+        </label>
+      </div>
+
+      {/* Live summary */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-transparent p-6 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+                <TrendingUp className="text-cyan-400" size={22} />
+                Live score preview
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Weighted average of culture, visual, and educational intent (1–5).</p>
+            </div>
+            <button
+              type="button"
+              onClick={resetRatings}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/[0.08]"
+            >
+              <RotateCcw size={16} />
+              Reset sliders
+            </button>
+          </div>
+          <div className="mt-6 space-y-4">
+            {leaderboardPreview.map((row, i) => (
+              <div key={row.id} className="flex items-center gap-4">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-xs font-bold text-slate-400">
+                  #{i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex justify-between text-sm">
+                    <span className="truncate font-medium text-slate-200">{row.name}</span>
+                    <span className="shrink-0 font-mono text-cyan-300">{row.score}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-500 transition-all duration-500"
+                      style={{ width: `${(row.score / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-3xl border border-dashed border-white/15 bg-[#0c1222]/80 p-6">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Quick tips</h3>
+          <ul className="mt-4 space-y-3 text-sm text-slate-400">
+            <li className="flex gap-2">
+              <span className="text-cyan-500">→</span>
+              Click any image to open the lightbox with zoom.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-violet-400">→</span>
+              Rate independently — there is no “right” order.
+            </li>
+            <li className="flex gap-2">
+              <span className="text-amber-400">→</span>
+              Main renders and proof screenshots load from <code className="text-slate-500">src/Assets</code> — swap files there to update visuals.
+            </li>
+          </ul>
         </div>
       </div>
 
-      {/* Model Rating Arena */}
-      <h2 className="text-xl font-semibold flex items-center gap-2 text-slate-100 pt-2">
-        <div className="p-1.5 bg-purple-500/10 rounded-lg">
-          <Sparkles size={20} className="text-purple-400" />
-        </div>
-        Evaluation Arena
-      </h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {models.map(model => (
-          <div key={model.id} className="bg-slate-900 border border-slate-700/50 rounded-3xl overflow-hidden hover:border-blue-500/30 transition-all duration-300 shadow-xl flex flex-col group relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-500/0 via-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-            
-            <div className="p-5 flex items-center justify-between border-b border-slate-800 bg-slate-950/50">
-              <h3 className="font-bold text-lg text-slate-200 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-sm text-blue-400 font-black border border-slate-700">
+      <div className="flex items-center justify-between gap-4 pt-2">
+        <h2 className="flex items-center gap-3 text-xl font-semibold text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 border border-violet-500/25">
+            <Sparkles className="text-violet-300" size={20} />
+          </span>
+          Evaluation arena
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {models.map((model) => (
+          <div
+            key={model.id}
+            className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c1222] shadow-xl shadow-black/30 transition hover:border-white/15 hover:shadow-cyan-500/5`}
+          >
+            <div
+              className={`pointer-events-none absolute inset-0 bg-gradient-to-b opacity-0 transition duration-500 group-hover:opacity-100 ${model.accent}`}
+            />
+            <div className="relative flex items-center justify-between border-b border-white/[0.06] bg-[#070b14]/40 px-5 py-4 backdrop-blur-sm">
+              <h3 className="flex items-center gap-3 font-bold text-slate-100">
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl border bg-white/[0.05] text-sm font-black text-cyan-300 ${model.ring} ring-1`}
+                >
                   {model.id}
                 </span>
                 {model.name}
               </h3>
             </div>
-            
-            <div 
-              className="h-72 relative flex items-center justify-center bg-slate-950 cursor-pointer group/img"
-              onClick={() => setSelectedImage(model.image)}
+
+            <button
+              type="button"
+              className="relative h-72 cursor-pointer bg-[#050810] group/img focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+              onClick={() => setLightboxSrc(model.image)}
             >
-              <img 
-                src={model.image} 
-                alt={model.name} 
-                className="max-w-full max-h-full object-contain group-hover/img:scale-[1.05] transition-transform duration-700 ease-out" 
+              <img
+                src={model.image}
+                alt={model.name}
+                className="mx-auto h-full w-full object-contain transition duration-700 ease-out group-hover/img:scale-[1.03]"
               />
-              <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/20 transition-colors flex items-center justify-center z-10">
-                <div className="opacity-0 group-hover/img:opacity-100 transform translate-y-4 group-hover/img:translate-y-0 transition-all duration-300 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-full flex items-center gap-2">
-                  <Maximize2 size={16} />
-                  <span className="text-sm font-medium">Click to expand</span>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover/img:bg-black/25">
+                <div className="translate-y-3 opacity-0 transition group-hover/img:translate-y-0 group-hover/img:opacity-100">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/55 px-4 py-2 text-sm font-medium text-white backdrop-blur-md">
+                    <Maximize2 size={16} />
+                    Expand
+                  </span>
                 </div>
               </div>
-              <div className="absolute inset-0 ring-1 ring-inset ring-slate-950/20 z-20 pointer-events-none"></div>
-            </div>
-            
-            <div className="p-6 space-y-6 flex-1 flex flex-col justify-end bg-slate-800/20 backdrop-blur-sm z-10">
-              <RatingSlider 
-                label="Cultural Accuracy" 
-                value={ratings[model.id].culture} 
-                onChange={(v) => handleRatingChange(model.id, 'culture', v)} 
+            </button>
+
+            <div className="relative z-10 flex flex-1 flex-col justify-end space-y-5 border-t border-white/[0.05] bg-[#0a0f1a]/90 p-6 backdrop-blur-md">
+              <RatingSlider
+                label="Cultural accuracy"
+                value={ratings[model.id].culture}
+                onChange={(v) => handleRatingChange(model.id, 'culture', v)}
               />
-              <RatingSlider 
-                label="Visual Quality" 
-                value={ratings[model.id].visual} 
-                onChange={(v) => handleRatingChange(model.id, 'visual', v)} 
+              <RatingSlider
+                label="Visual quality"
+                value={ratings[model.id].visual}
+                onChange={(v) => handleRatingChange(model.id, 'visual', v)}
               />
-              <RatingSlider 
-                label="Educational Intent" 
-                value={ratings[model.id].education} 
-                onChange={(v) => handleRatingChange(model.id, 'education', v)} 
+              <RatingSlider
+                label="Educational intent"
+                value={ratings[model.id].education}
+                onChange={(v) => handleRatingChange(model.id, 'education', v)}
               />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Model Technical Specifications */}
-      <div className="pt-8">
-        <h2 className="text-xl font-semibold flex items-center gap-2 text-slate-100 mb-6">
-          <div className="p-1.5 bg-indigo-500/10 rounded-lg">
-            <Settings size={20} className="text-indigo-400" />
-          </div>
-          Model Technical Specifications
+      {/* Technical specs */}
+      <div className="pt-4">
+        <h2 className="mb-6 flex items-center gap-3 text-xl font-semibold text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 border border-indigo-500/25">
+            <Settings className="text-indigo-300" size={20} />
+          </span>
+          Model specifications
         </h2>
-        <div className="bg-slate-800/30 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl space-y-8">
-          {models.map(model => (
-            <div key={`tech-${model.id}`} className="flex flex-col lg:flex-row gap-6 pb-8 border-b border-slate-700/50 last:border-0 last:pb-0 group/specs relative">
-              <div className="absolute -left-6 top-0 bottom-0 w-1 bg-blue-500/0 group-hover/specs:bg-blue-500/50 transition-colors"></div>
-              <div className="w-full lg:w-1/4 shrink-0 space-y-3">
-                <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs text-blue-400 font-black border border-slate-700 shadow-sm">
+        <div className="space-y-8 rounded-3xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8">
+          {models.map((model) => (
+            <div
+              key={`tech-${model.id}`}
+              className="group/specs relative flex flex-col gap-6 border-b border-white/[0.06] pb-8 last:border-0 last:pb-0 lg:flex-row"
+            >
+              <div className="w-full shrink-0 space-y-3 lg:w-1/4">
+                <h3 className="flex items-center gap-2 text-lg font-bold text-slate-100">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-xs font-black text-cyan-400">
                     {model.id}
                   </span>
                   {model.modelName}
                 </h3>
-                <p className="text-sm font-medium text-slate-400 flex items-center gap-1.5"><Cpu size={14}/> {model.company}</p>
-                <div className="pt-2">
-                  <a href={`https://${model.generatedAt.split(' ')[0]}`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-full w-fit border border-emerald-500/20 transition-all shadow-sm">
-                    <Globe size={12} />
-                    {model.generatedAt}
-                  </a>
-                </div>
+                <p className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                  <Cpu size={14} /> {model.company}
+                </p>
+                <a
+                  href={`https://${model.generatedAt.split(' ')[0]}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+                >
+                  <Globe size={12} />
+                  {model.generatedAt}
+                </a>
               </div>
-              
-              <div className="w-full lg:w-2/4 space-y-4">
-                <div className="bg-slate-900/60 p-5 rounded-xl border border-slate-700/50 shadow-inner group-hover/specs:bg-slate-900/80 transition-colors">
-                  <p className="text-[11px] font-bold text-amber-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <FileText size={14} className="text-amber-400" />
-                    Shared Generation Prompt
+
+              <div className="w-full space-y-4 lg:w-2/4">
+                <div className="rounded-2xl border border-white/[0.06] bg-[#0c1222]/80 p-5 shadow-inner transition group-hover/specs:border-white/10">
+                  <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-amber-400/90">
+                    <FileText size={14} />
+                    Shared prompt
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed font-medium">
-                    "{model.prompt}"
-                  </p>
+                  <p className="text-sm leading-relaxed text-slate-300">"{model.prompt}"</p>
                 </div>
-                <div className="flex items-start gap-3 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 group-hover/specs:border-blue-500/20 transition-colors">
-                  <div className="p-1.5 bg-blue-500/10 rounded-lg shrink-0 mt-0.5">
-                    <Settings size={14} className="text-blue-400" />
+                <div className="flex items-start gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                  <div className="mt-0.5 rounded-lg bg-cyan-500/15 p-1.5">
+                    <Settings size={14} className="text-cyan-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Model Settings / Variations</p>
-                    <p className="text-sm text-slate-200">{model.settings}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Settings</p>
+                    <p className="mt-1 text-sm text-slate-200">{model.settings}</p>
                   </div>
                 </div>
               </div>
-              
-              <div className="w-full lg:w-1/4 shrink-0 flex flex-col">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+
+              <div className="flex w-full flex-col lg:w-1/4">
+                <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
                   <ImageIcon size={14} />
-                  Generation Proof
+                  Generation proof
                 </p>
-                <div 
-                  className="bg-slate-950 rounded-xl border border-slate-700/50 group-hover/specs:border-blue-500/40 transition-colors flex-1 min-h-[150px] relative overflow-hidden cursor-pointer group/proof"
-                  onClick={() => setSelectedImage(model.proof)}
-                  title="Click to view full screenshot in Modal"
+                <button
+                  type="button"
+                  className="group/proof relative min-h-[150px] flex-1 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#050810] text-left transition hover:border-cyan-500/40"
+                  onClick={() => setLightboxSrc(model.proof)}
                 >
-                  <img src={model.proof} alt={`${model.modelName} Proof`} className="absolute inset-0 w-full h-full object-cover object-top opacity-70 group-hover/specs:opacity-100 group-hover/proof:scale-105 transition-all duration-500" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/proof:opacity-100 transition-opacity">
-                    <div className="bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium">
-                      <Maximize2 size={12} /> Expand
-                    </div>
+                  <img
+                    src={model.proof}
+                    alt={`${model.modelName} proof`}
+                    className="absolute inset-0 h-full w-full object-cover object-top opacity-80 transition duration-500 group-hover/proof:scale-105 group-hover/proof:opacity-100"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover/proof:opacity-100">
+                    <span className="flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+                      <Maximize2 size={12} /> View
+                    </span>
                   </div>
-                </div>
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
-      
-      <div className="flex justify-end pt-6 pb-12">
-        <button className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-xl font-medium shadow-lg shadow-blue-600/20 hover:shadow-blue-500/40 transition-all active:scale-[0.98] flex items-center gap-3 group">
-          Submit Evaluation
-          <CheckSquare size={18} className="group-hover:scale-110 transition-transform" />
+
+      <div className="flex flex-col items-stretch justify-end gap-4 border-t border-white/[0.06] pt-8 pb-4 sm:flex-row sm:items-center">
+        <p className="text-sm text-slate-500">
+          Submitting stores a snapshot in <strong className="text-slate-400">localStorage</strong> for demo purposes.
+        </p>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-violet-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-cyan-500/25 transition hover:brightness-110 active:scale-[0.98]"
+        >
+          Submit evaluation
+          <CheckSquare size={18} />
         </button>
       </div>
 
-      {selectedImage && (
-        <ImageModal imageSrc={selectedImage} onClose={() => setSelectedImage(null)} />
-      )}
+      {lightboxSrc && <ImageModal imageSrc={lightboxSrc} onClose={() => setLightboxSrc(null)} />}
     </div>
   );
 }
 
 function RatingSlider({ label, value, onChange }) {
   return (
-    <div className="space-y-3">
-      <div className="flex justify-between items-center text-sm">
-        <span className="text-slate-300 font-medium tracking-wide">{label}</span>
-        <span className="text-blue-400 font-bold bg-blue-500/10 px-2.5 py-0.5 rounded-md border border-blue-500/20 shadow-sm">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-300">{label}</span>
+        <span className="rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-sm font-bold text-cyan-300">
           {value}/5
         </span>
       </div>
-      <div className="relative flex items-center">
-        <input
-          type="range"
-          min="1"
-          max="5"
-          step="1"
-          value={value}
-          onChange={(e) => onChange(parseInt(e.target.value))}
-          className="w-full h-2.5 bg-slate-700/80 rounded-full appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all"
-        />
-      </div>
-      <div className="flex justify-between text-[11px] font-medium text-slate-500 uppercase tracking-wider px-1">
+      <input
+        type="range"
+        min="1"
+        max="5"
+        step="1"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        className="vidya-range h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800"
+      />
+      <div className="flex justify-between px-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-600">
         <span>Poor</span>
         <span>Excellent</span>
       </div>
@@ -285,46 +477,69 @@ function RatingSlider({ label, value, onChange }) {
 
 function ImageModal({ imageSrc, onClose }) {
   const [scale, setScale] = useState(1);
-  
-  const handleZoomIn = (e) => {
-    e.stopPropagation();
-    setScale(prev => Math.min(prev + 0.5, 4));
-  };
-  
-  const handleZoomOut = (e) => {
-    e.stopPropagation();
-    setScale(prev => Math.max(prev - 0.5, 0.5));
-  };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-pop-in">
-      {/* Controls */}
-      <div className="absolute top-6 right-6 flex items-center gap-4 z-[110]">
-        <div className="flex bg-slate-800/80 backdrop-blur-md rounded-xl overflow-hidden border border-slate-700 shadow-xl">
-          <button onClick={handleZoomOut} className="p-3 text-slate-300 hover:text-white hover:bg-slate-700 transition" title="Zoom Out">
-            <ZoomOut size={24} />
+    <div
+      className="fixed inset-0 z-[100] flex animate-pop-in items-center justify-center overflow-auto bg-[#030508]/88 p-3 pt-14 backdrop-blur-sm sm:p-4 sm:pt-16"
+      role="dialog"
+      aria-modal
+      aria-label="Image preview"
+      onClick={onClose}
+    >
+      <div className="pointer-events-none absolute right-2 top-2 z-[120] flex items-center gap-1.5 sm:right-3 sm:top-3">
+        <div className="pointer-events-auto flex overflow-hidden rounded-xl border border-white/10 bg-[#0c1222]/90 shadow-xl backdrop-blur-md">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setScale((s) => Math.max(0.5, s - 0.25));
+            }}
+            className="p-2.5 text-slate-300 transition hover:bg-white/10 hover:text-white sm:p-3"
+            title="Zoom out"
+          >
+            <ZoomOut size={22} />
           </button>
-          <div className="w-px bg-slate-700"></div>
-          <button onClick={handleZoomIn} className="p-3 text-slate-300 hover:text-white hover:bg-slate-700 transition" title="Zoom In">
-            <ZoomIn size={24} />
+          <div className="w-px bg-white/10" />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setScale((s) => Math.min(4, s + 0.25));
+            }}
+            className="p-2.5 text-slate-300 transition hover:bg-white/10 hover:text-white sm:p-3"
+            title="Zoom in"
+          >
+            <ZoomIn size={22} />
           </button>
         </div>
-        <button onClick={onClose} className="p-3 bg-slate-800/80 backdrop-blur-md text-slate-300 hover:text-white hover:bg-red-500/80 rounded-xl border border-slate-700 shadow-xl transition" title="Close">
-          <X size={24} />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="pointer-events-auto rounded-xl border border-white/10 bg-[#0c1222]/90 p-2.5 text-slate-300 shadow-xl backdrop-blur-md transition hover:bg-red-500/80 hover:text-white sm:p-3"
+          title="Close"
+        >
+          <X size={22} />
         </button>
       </div>
 
-      {/* Image Container */}
-      <div className="w-full h-full flex items-center justify-center overflow-auto custom-scrollbar relative" onClick={onClose}>
-        <div className="min-w-full min-h-full flex items-center justify-center p-8" onClick={e => e.stopPropagation()}>
-          <img 
-            src={imageSrc} 
-            alt="Expanded view" 
-            className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-200 ease-out shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-xl"
-            style={{ transform: `scale(${scale})`, transformOrigin: 'center' }} 
-            draggable="false"
-          />
-        </div>
+      {/* Wrapper hugs image size (only max caps); no full-viewport flex column */}
+      <div
+        className="pointer-events-auto inline-flex max-h-[min(92vh,calc(100vh-5rem))] max-w-[calc(100vw-1.5rem)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={imageSrc}
+          alt="Expanded"
+          className="block h-auto max-h-[min(92vh,calc(100vh-5rem))] w-auto max-w-[calc(100vw-1.5rem)] rounded-lg object-contain shadow-[0_0_32px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+          draggable={false}
+        />
       </div>
     </div>
   );
